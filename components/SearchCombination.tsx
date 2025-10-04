@@ -5,12 +5,12 @@ import {
   Box,
   Button,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  FormLabel,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
   Checkbox,
   ListItemText,
-  OutlinedInput,
   Paper,
   Typography,
   Table,
@@ -180,19 +180,21 @@ export default function SearchCombination() {
           複合検索
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <FormControl fullWidth>
-            <InputLabel>夜渡り</InputLabel>
-            <Select
+          <FormControl>
+            <FormLabel>夜渡り</FormLabel>
+            <RadioGroup
               value={selectedNightRunnerId}
-              label="夜渡り"
               onChange={(e) => setSelectedNightRunnerId(e.target.value)}
             >
               {nightRunners.map((nr) => (
-                <MenuItem key={nr.id} value={nr.id}>
-                  {nr.name}
-                </MenuItem>
+                <FormControlLabel
+                  key={nr.id}
+                  value={nr.id}
+                  control={<Radio />}
+                  label={nr.name}
+                />
               ))}
-            </Select>
+            </RadioGroup>
           </FormControl>
 
           <Box sx={{ width: '100%' }}>
