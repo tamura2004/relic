@@ -23,9 +23,10 @@ interface EffectFormProps {
   categories: Category[];
   onSave: (effect: Effect) => void;
   onClose: () => void;
+  defaultCategoryId?: string;
 }
 
-export default function EffectForm({ open, effect, categories, onSave, onClose }: EffectFormProps) {
+export default function EffectForm({ open, effect, categories, onSave, onClose, defaultCategoryId }: EffectFormProps) {
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState(DEFAULT_CATEGORY_ID);
 
@@ -35,9 +36,9 @@ export default function EffectForm({ open, effect, categories, onSave, onClose }
       setCategoryId(effect.categoryId || DEFAULT_CATEGORY_ID);
     } else {
       setDescription('');
-      setCategoryId(DEFAULT_CATEGORY_ID);
+      setCategoryId(defaultCategoryId || DEFAULT_CATEGORY_ID);
     }
-  }, [effect]);
+  }, [effect, defaultCategoryId]);
 
   const handleSubmit = () => {
     const newEffect: Effect = {

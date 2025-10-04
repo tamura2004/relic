@@ -14,9 +14,10 @@ import {
   Paper,
   IconButton,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  FormLabel,
+  RadioGroup,
+  Radio,
+  FormControlLabel,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { Effect, Category } from '@/types';
@@ -85,31 +86,36 @@ export default function EffectList() {
 
   return (
     <Box>
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <TextField
-          label="効果で検索"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-        />
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>カテゴリで絞込</InputLabel>
-          <Select
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            label="効果で検索"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            fullWidth
+          />
+          <Button variant="contained" onClick={handleAdd}>
+            新規登録
+          </Button>
+        </Box>
+        <FormControl>
+          <FormLabel>カテゴリで絞込</FormLabel>
+          <RadioGroup
+            row
             value={categoryFilter}
-            label="カテゴリで絞込"
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
-            <MenuItem value="">すべて</MenuItem>
+            <FormControlLabel value="" control={<Radio />} label="すべて" />
             {categories.map((category) => (
-              <MenuItem key={category.id} value={category.id}>
-                {category.name}
-              </MenuItem>
+              <FormControlLabel
+                key={category.id}
+                value={category.id}
+                control={<Radio />}
+                label={category.name}
+              />
             ))}
-          </Select>
+          </RadioGroup>
         </FormControl>
-        <Button variant="contained" onClick={handleAdd}>
-          新規登録
-        </Button>
       </Box>
 
       <TableContainer component={Paper}>
@@ -149,6 +155,7 @@ export default function EffectList() {
           setIsFormOpen(false);
           setEditingEffect(null);
         }}
+        defaultCategoryId={categoryFilter}
       />
     </Box>
   );
