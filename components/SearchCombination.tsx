@@ -20,9 +20,15 @@ import {
   TableHead,
   TableRow,
   Chip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  List,
+  ListItem,
 } from '@mui/material';
-import { NightRunner, Grail, Relic, Effect, GrailColor, RelicColor } from '@/types';
-import { nightRunnerStorage, grailStorage, relicStorage, effectStorage } from '@/lib/storage';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { NightRunner, Grail, Relic, Effect, GrailColor, RelicColor, Category } from '@/types';
+import { nightRunnerStorage, grailStorage, relicStorage, effectStorage, categoryStorage } from '@/lib/storage';
 
 interface GrailRelicMatch {
   grail: Grail;
@@ -34,6 +40,7 @@ export default function SearchCombination() {
   const [grails, setGrails] = useState<Grail[]>([]);
   const [relics, setRelics] = useState<Relic[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [selectedNightRunnerId, setSelectedNightRunnerId] = useState('');
   const [selectedEffectIds, setSelectedEffectIds] = useState<string[]>([]);
@@ -41,16 +48,18 @@ export default function SearchCombination() {
 
   useEffect(() => {
     const loadData = async () => {
-      const [nightRunnersData, grailsData, relicsData, effectsData] = await Promise.all([
+      const [nightRunnersData, grailsData, relicsData, effectsData, categoriesData] = await Promise.all([
         nightRunnerStorage.getAll(),
         grailStorage.getAll(),
         relicStorage.getAll(),
         effectStorage.getAll(),
+        categoryStorage.getAll(),
       ]);
       setNightRunners(nightRunnersData);
       setGrails(grailsData);
       setRelics(relicsData);
       setEffects(effectsData);
+      setCategories(categoriesData);
     };
     loadData();
   }, []);
@@ -186,23 +195,42 @@ export default function SearchCombination() {
             </Select>
           </FormControl>
 
-          <FormControl fullWidth>
-            <InputLabel>効果（複数選択可）</InputLabel>
-            <Select
-              multiple
-              value={selectedEffectIds}
-              onChange={(e) => setSelectedEffectIds(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
-              input={<OutlinedInput label="効果（複数選択可）" />}
-              renderValue={(selected) => `${selected.length}個選択中`}
-            >
-              {effects.map((effect) => (
-                <MenuItem key={effect.id} value={effect.id}>
-                  <Checkbox checked={selectedEffectIds.indexOf(effect.id) > -1} />
-                  <ListItemText primary={effect.description} />
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ width: '100%' }}>
+            <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
+              効果（複数選択可）: {selectedEffectIds.length}個選択中
+            </Typography>
+            {categories.map((category) => {
+              const categoryEffects = effects.filter((e) => e.categoryId === category.id);
+              if (categoryEffects.length === 0) return null;
+
+              return (
+                <Accordion key={category.id}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>{category.name} ({categoryEffects.filter(e => selectedEffectIds.includes(e.id)).length}/{categoryEffects.length})</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <List sx={{ width: '100%', p: 0 }}>
+                      {categoryEffects.map((effect) => (
+                        <ListItem
+                          key={effect.id}
+                          sx={{ px: 0 }}
+                          onClick={() => {
+                            const newSelection = selectedEffectIds.includes(effect.id)
+                              ? selectedEffectIds.filter((id) => id !== effect.id)
+                              : [...selectedEffectIds, effect.id];
+                            setSelectedEffectIds(newSelection);
+                          }}
+                        >
+                          <Checkbox checked={selectedEffectIds.includes(effect.id)} />
+                          <ListItemText primary={effect.description} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </AccordionDetails>
+                </Accordion>
+              );
+            })}
+          </Box>
 
           <Button variant="contained" onClick={handleSearch} disabled={!selectedNightRunnerId || selectedEffectIds.length === 0}>
             検索
