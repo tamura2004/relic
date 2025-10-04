@@ -183,6 +183,7 @@ export default function SearchCombination() {
           <FormControl>
             <FormLabel>夜渡り</FormLabel>
             <RadioGroup
+              row
               value={selectedNightRunnerId}
               onChange={(e) => setSelectedNightRunnerId(e.target.value)}
             >

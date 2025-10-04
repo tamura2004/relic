@@ -19,6 +19,7 @@ import {
   FormLabel,
 } from '@mui/material';
 import { Relic, RelicColor, Effect, Category } from '@/types';
+import { DEFAULT_CATEGORY_ID } from '@/lib/storage';
 
 interface RelicFormProps {
   open: boolean;
@@ -57,9 +58,9 @@ export default function RelicForm({ open, relic, effects, categories, onSave, on
       setEffect1('');
       setEffect2('');
       setEffect3('');
-      setCategory1('');
-      setCategory2('');
-      setCategory3('');
+      setCategory1(DEFAULT_CATEGORY_ID);
+      setCategory2(DEFAULT_CATEGORY_ID);
+      setCategory3(DEFAULT_CATEGORY_ID);
     }
   }, [relic, effects]);
 
@@ -104,9 +105,9 @@ export default function RelicForm({ open, relic, effects, categories, onSave, on
     setEffect1('');
     setEffect2('');
     setEffect3('');
-    setCategory1('');
-    setCategory2('');
-    setCategory3('');
+    setCategory1(DEFAULT_CATEGORY_ID);
+    setCategory2(DEFAULT_CATEGORY_ID);
+    setCategory3(DEFAULT_CATEGORY_ID);
   };
 
   const isValid = effect1 && effect2 && effect3;
