@@ -40,10 +40,19 @@ export default function SearchCombination() {
   const [searchResults, setSearchResults] = useState<GrailRelicMatch[]>([]);
 
   useEffect(() => {
-    setNightRunners(nightRunnerStorage.getAll());
-    setGrails(grailStorage.getAll());
-    setRelics(relicStorage.getAll());
-    setEffects(effectStorage.getAll());
+    const loadData = async () => {
+      const [nightRunnersData, grailsData, relicsData, effectsData] = await Promise.all([
+        nightRunnerStorage.getAll(),
+        grailStorage.getAll(),
+        relicStorage.getAll(),
+        effectStorage.getAll(),
+      ]);
+      setNightRunners(nightRunnersData);
+      setGrails(grailsData);
+      setRelics(relicsData);
+      setEffects(effectsData);
+    };
+    loadData();
   }, []);
 
   const handleSearch = () => {

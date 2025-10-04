@@ -32,11 +32,18 @@ export default function EffectList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
-    setEffects(effectStorage.getAll());
-    setCategories(categoryStorage.getAll());
+    const loadData = async () => {
+      const [effectsData, categoriesData] = await Promise.all([
+        effectStorage.getAll(),
+        categoryStorage.getAll(),
+      ]);
+      setEffects(effectsData);
+      setCategories(categoriesData);
+    };
+    loadData();
   }, []);
 
-  const handleSave = (effect: Effect) => {
+  const handleSave = async (effect: Effect) => {
     let updatedEffects: Effect[];
     if (editingEffect) {
       updatedEffects = effects.map((e) => (e.id === effect.id ? effect : e));
@@ -44,15 +51,15 @@ export default function EffectList() {
       updatedEffects = [...effects, effect];
     }
     setEffects(updatedEffects);
-    effectStorage.save(updatedEffects);
+    await effectStorage.save(updatedEffects);
     setIsFormOpen(false);
     setEditingEffect(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const updatedEffects = effects.filter((e) => e.id !== id);
     setEffects(updatedEffects);
-    effectStorage.save(updatedEffects);
+    await effectStorage.save(updatedEffects);
   };
 
   const handleEdit = (effect: Effect) => {

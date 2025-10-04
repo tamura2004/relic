@@ -24,10 +24,14 @@ export default function NightRunnerList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
-    setNightRunners(nightRunnerStorage.getAll());
+    const loadData = async () => {
+      const nightRunnersData = await nightRunnerStorage.getAll();
+      setNightRunners(nightRunnersData);
+    };
+    loadData();
   }, []);
 
-  const handleSave = (nightRunner: NightRunner) => {
+  const handleSave = async (nightRunner: NightRunner) => {
     let updated: NightRunner[];
     if (editingNightRunner) {
       updated = nightRunners.map((nr) => (nr.id === nightRunner.id ? nightRunner : nr));
@@ -35,15 +39,15 @@ export default function NightRunnerList() {
       updated = [...nightRunners, nightRunner];
     }
     setNightRunners(updated);
-    nightRunnerStorage.save(updated);
+    await nightRunnerStorage.save(updated);
     setIsFormOpen(false);
     setEditingNightRunner(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const updated = nightRunners.filter((nr) => nr.id !== id);
     setNightRunners(updated);
-    nightRunnerStorage.save(updated);
+    await nightRunnerStorage.save(updated);
   };
 
   const handleEdit = (nightRunner: NightRunner) => {

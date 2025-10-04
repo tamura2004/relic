@@ -35,12 +35,20 @@ export default function RelicList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
-    setRelics(relicStorage.getAll());
-    setEffects(effectStorage.getAll());
-    setCategories(categoryStorage.getAll());
+    const loadData = async () => {
+      const [relicsData, effectsData, categoriesData] = await Promise.all([
+        relicStorage.getAll(),
+        effectStorage.getAll(),
+        categoryStorage.getAll(),
+      ]);
+      setRelics(relicsData);
+      setEffects(effectsData);
+      setCategories(categoriesData);
+    };
+    loadData();
   }, []);
 
-  const handleSave = (relic: Relic) => {
+  const handleSave = async (relic: Relic) => {
     let updatedRelics: Relic[];
     if (editingRelic) {
       updatedRelics = relics.map((r) => (r.id === relic.id ? relic : r));
@@ -48,15 +56,15 @@ export default function RelicList() {
       updatedRelics = [...relics, relic];
     }
     setRelics(updatedRelics);
-    relicStorage.save(updatedRelics);
+    await relicStorage.save(updatedRelics);
     setIsFormOpen(false);
     setEditingRelic(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const updatedRelics = relics.filter((r) => r.id !== id);
     setRelics(updatedRelics);
-    relicStorage.save(updatedRelics);
+    await relicStorage.save(updatedRelics);
   };
 
   const handleEdit = (relic: Relic) => {

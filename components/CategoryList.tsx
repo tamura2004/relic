@@ -24,10 +24,14 @@ export default function CategoryList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
-    setCategories(categoryStorage.getAll());
+    const loadData = async () => {
+      const categoriesData = await categoryStorage.getAll();
+      setCategories(categoriesData);
+    };
+    loadData();
   }, []);
 
-  const handleSave = (category: Category) => {
+  const handleSave = async (category: Category) => {
     let updatedCategories: Category[];
     if (editingCategory) {
       updatedCategories = categories.map((c) => (c.id === category.id ? category : c));
@@ -35,12 +39,12 @@ export default function CategoryList() {
       updatedCategories = [...categories, category];
     }
     setCategories(updatedCategories);
-    categoryStorage.save(updatedCategories);
+    await categoryStorage.save(updatedCategories);
     setIsFormOpen(false);
     setEditingCategory(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     // デフォルトカテゴリは削除できない
     if (id === DEFAULT_CATEGORY_ID) {
       alert('「その他」カテゴリは削除できません。');
@@ -48,7 +52,7 @@ export default function CategoryList() {
     }
     const updatedCategories = categories.filter((c) => c.id !== id);
     setCategories(updatedCategories);
-    categoryStorage.save(updatedCategories);
+    await categoryStorage.save(updatedCategories);
   };
 
   const handleEdit = (category: Category) => {

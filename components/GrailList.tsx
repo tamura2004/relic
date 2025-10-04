@@ -31,11 +31,18 @@ export default function GrailList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
-    setGrails(grailStorage.getAll());
-    setNightRunners(nightRunnerStorage.getAll());
+    const loadData = async () => {
+      const [grailsData, nightRunnersData] = await Promise.all([
+        grailStorage.getAll(),
+        nightRunnerStorage.getAll(),
+      ]);
+      setGrails(grailsData);
+      setNightRunners(nightRunnersData);
+    };
+    loadData();
   }, []);
 
-  const handleSave = (grail: Grail) => {
+  const handleSave = async (grail: Grail) => {
     let updated: Grail[];
     if (editingGrail) {
       updated = grails.map((g) => (g.id === grail.id ? grail : g));
@@ -43,15 +50,15 @@ export default function GrailList() {
       updated = [...grails, grail];
     }
     setGrails(updated);
-    grailStorage.save(updated);
+    await grailStorage.save(updated);
     setIsFormOpen(false);
     setEditingGrail(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const updated = grails.filter((g) => g.id !== id);
     setGrails(updated);
-    grailStorage.save(updated);
+    await grailStorage.save(updated);
   };
 
   const handleEdit = (grail: Grail) => {
