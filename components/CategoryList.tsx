@@ -14,19 +14,24 @@ import {
   IconButton,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { Category } from '@/types';
-import { categoryStorage, DEFAULT_CATEGORY_ID } from '@/lib/storage';
+import { Category, Effect } from '@/types';
+import { categoryStorage, effectStorage, DEFAULT_CATEGORY_ID } from '@/lib/storage';
 import CategoryForm from './CategoryForm';
 
 export default function CategoryList() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [effects, setEffects] = useState<Effect[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
-      const categoriesData = await categoryStorage.getAll();
+      const [categoriesData, effectsData] = await Promise.all([
+        categoryStorage.getAll(),
+        effectStorage.getAll(),
+      ]);
       setCategories(categoriesData);
+      setEffects(effectsData);
     };
     loadData();
   }, []);
@@ -50,6 +55,14 @@ export default function CategoryList() {
       alert('「その他」カテゴリは削除できません。');
       return;
     }
+
+    // このカテゴリを使用している効果があるかチェック
+    const usedInEffects = effects.some((effect) => effect.categoryId === id);
+    if (usedInEffects) {
+      alert('このカテゴリは効果で使用されているため削除できません。');
+      return;
+    }
+
     const updatedCategories = categories.filter((c) => c.id !== id);
     setCategories(updatedCategories);
     await categoryStorage.save(updatedCategories);

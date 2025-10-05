@@ -78,11 +78,13 @@ export default function EffectList() {
     return category?.name || 'その他';
   };
 
-  const filteredEffects = effects.filter((effect) => {
-    const matchesSearch = effect.description.includes(searchTerm);
-    const matchesCategory = !categoryFilter || effect.categoryId === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredEffects = effects
+    .filter((effect) => {
+      const matchesSearch = effect.description.includes(searchTerm);
+      const matchesCategory = !categoryFilter || effect.categoryId === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => a.description.localeCompare(b.description));
 
   return (
     <Box>
@@ -150,6 +152,7 @@ export default function EffectList() {
         open={isFormOpen}
         effect={editingEffect}
         categories={categories}
+        effects={effects}
         onSave={handleSave}
         onClose={() => {
           setIsFormOpen(false);

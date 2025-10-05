@@ -78,78 +78,77 @@ export default function SearchCombination() {
 
     const results: GrailRelicMatch[] = [];
 
-    // 各盃に対して遺物をマッチング
+    // 各盃に対して全ての可能な遺物の組み合わせを探す
     for (const grail of availableGrails) {
-      const matchedRelics: Relic[] = [];
-      const usedRelicIds = new Set<string>();
-
-      // 盃の3つの色それぞれに対して遺物を探す
-      for (const grailColor of grail.colors) {
-        // この色にマッチする遺物を探す
-        const candidateRelics = relics.filter((relic) => {
-          // すでに使用済みの遺物は除外
-          if (usedRelicIds.has(relic.id)) return false;
-
+      // 各色に対応する候補遺物を取得
+      const candidatesByColor: Relic[][] = grail.colors.map((grailColor) => {
+        return relics.filter((relic) => {
           // 色のマッチング（無色はすべての遺物にマッチ）
           if (grailColor !== '無色' && relic.color !== grailColor) return false;
 
-          // まだ見つかっていない効果を含むかチェック
-          const relicEffects = relic.effects;
-          const hasUnfoundEffect = selectedEffectIds.some((effectId) => {
-            // すでに見つかっている効果はスキップ
-            const alreadyFound = matchedRelics.some((mr) => mr.effects.includes(effectId));
-            if (alreadyFound) return false;
-
-            // この遺物が効果を持っているかチェック
-            return relicEffects.includes(effectId);
-          });
-
-          return hasUnfoundEffect;
-        });
-
-        // 最適な遺物を選択（最も多くの未発見効果を含むもの）
-        let bestRelic: Relic | null = null;
-        let maxNewEffects = 0;
-
-        for (const relic of candidateRelics) {
-          const foundEffects = new Set<string>();
-          matchedRelics.forEach((mr) => mr.effects.forEach((e) => foundEffects.add(e)));
-
-          const newEffectsCount = selectedEffectIds.filter(
-            (effectId) => relic.effects.includes(effectId) && !foundEffects.has(effectId)
-          ).length;
-
-          if (newEffectsCount > maxNewEffects) {
-            maxNewEffects = newEffectsCount;
-            bestRelic = relic;
-          }
-        }
-
-        if (bestRelic) {
-          matchedRelics.push(bestRelic);
-          usedRelicIds.add(bestRelic.id);
-        }
-      }
-
-      // すべての選択された効果が見つかったかチェック
-      const foundEffects = new Set<string>();
-      matchedRelics.forEach((relic) => {
-        relic.effects.forEach((effectId) => {
-          if (selectedEffectIds.includes(effectId)) {
-            foundEffects.add(effectId);
-          }
+          // 選択された効果のいずれかを持っているかチェック
+          return relic.effects.some((effectId) => selectedEffectIds.includes(effectId));
         });
       });
 
-      if (foundEffects.size === selectedEffectIds.length) {
+      // 3つの色に対する遺物の全組み合わせを生成
+      const combinations: Relic[][] = [];
+
+      function generateCombinations(index: number, current: Relic[]) {
+        if (index === 3) {
+          // 重複チェック：同じ遺物を使っていないか
+          const usedIds = new Set(current.map(r => r.id));
+          if (usedIds.size === 3) {
+            // すべての効果が含まれているかチェック
+            const foundEffects = new Set<string>();
+            current.forEach((relic) => {
+              relic.effects.forEach((effectId) => {
+                if (selectedEffectIds.includes(effectId)) {
+                  foundEffects.add(effectId);
+                }
+              });
+            });
+
+            if (foundEffects.size === selectedEffectIds.length) {
+              combinations.push([...current]);
+            }
+          }
+          return;
+        }
+
+        for (const relic of candidatesByColor[index]) {
+          current[index] = relic;
+          generateCombinations(index + 1, current);
+        }
+      }
+
+      generateCombinations(0, []);
+
+      // 見つかった組み合わせをすべて結果に追加
+      for (const combination of combinations) {
         results.push({
           grail,
-          relics: matchedRelics,
+          relics: combination,
         });
       }
     }
 
-    setSearchResults(results);
+    // 重複する組み合わせを除外（順番が違うだけで同じ遺物の組み合わせを削除）
+    const uniqueResults: GrailRelicMatch[] = [];
+    const seenCombinations = new Set<string>();
+
+    for (const result of results) {
+      // 遺物のIDをソートして正規化キーを作成
+      const relicIds = result.relics.map(r => r.id).sort().join(',');
+      const key = `${result.grail.id}:${relicIds}`;
+
+      if (!seenCombinations.has(key)) {
+        seenCombinations.add(key);
+        uniqueResults.push(result);
+      }
+    }
+
+    setSearchResults(uniqueResults);
   };
 
   const getEffectDescription = (effectId: string): string => {
