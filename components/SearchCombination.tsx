@@ -202,7 +202,9 @@ export default function SearchCombination() {
               効果（複数選択可）: {selectedEffectIds.length}個選択中
             </Typography>
             {categories.map((category) => {
-              const categoryEffects = effects.filter((e) => e.categoryId === category.id);
+              const categoryEffects = effects
+                .filter((e) => e.categoryId === category.id)
+                .sort((a, b) => a.description.localeCompare(b.description));
               if (categoryEffects.length === 0) return null;
 
               return (
