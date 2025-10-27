@@ -25,10 +25,15 @@ import {
   AccordionDetails,
   List,
   ListItem,
+  IconButton,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { NightRunner, Grail, Relic, Effect, GrailColor, RelicColor, Category } from '@/types';
-import { nightRunnerStorage, grailStorage, relicStorage, effectStorage, categoryStorage } from '@/lib/storage';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import { NightRunner, Grail, Relic, Effect, GrailColor, RelicColor, Category, FavoriteCombination } from '@/types';
+import { nightRunnerStorage, grailStorage, relicStorage, effectStorage, categoryStorage, favoriteCombinationStorage } from '@/lib/storage';
 
 interface GrailRelicMatch {
   grail: Grail;
@@ -41,25 +46,30 @@ export default function SearchCombination() {
   const [relics, setRelics] = useState<Relic[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteCombination[]>([]);
 
   const [selectedNightRunnerId, setSelectedNightRunnerId] = useState('');
   const [selectedEffectIds, setSelectedEffectIds] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<GrailRelicMatch[]>([]);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
-      const [nightRunnersData, grailsData, relicsData, effectsData, categoriesData] = await Promise.all([
+      const [nightRunnersData, grailsData, relicsData, effectsData, categoriesData, favoritesData] = await Promise.all([
         nightRunnerStorage.getAll(),
         grailStorage.getAll(),
         relicStorage.getAll(),
         effectStorage.getAll(),
         categoryStorage.getAll(),
+        favoriteCombinationStorage.getAll(),
       ]);
       setNightRunners(nightRunnersData);
       setGrails(grailsData);
       setRelics(relicsData);
       setEffects(effectsData);
       setCategories(categoriesData);
+      setFavorites(favoritesData);
     };
     loadData();
   }, []);
@@ -172,6 +182,32 @@ export default function SearchCombination() {
     return colorMap[color as GrailColor];
   };
 
+  const isFavorite = (grailId: string, relicIds: string[]): boolean => {
+    const sortedRelicIds = [...relicIds].sort();
+    return favorites.some(
+      (fav) => fav.grailId === grailId && [...fav.relicIds].sort().join(',') === sortedRelicIds.join(',')
+    );
+  };
+
+  const handleToggleFavorite = async (grail: Grail, relics: Relic[]) => {
+    const relicIds = relics.map((r) => r.id) as [string, string, string];
+    const favoriteId = `${grail.id}_${[...relicIds].sort().join('_')}`;
+
+    if (isFavorite(grail.id, relicIds)) {
+      // お気に入りから削除
+      await favoriteCombinationStorage.remove(favoriteId);
+      setFavorites(favorites.filter((f) => f.id !== favoriteId));
+      setSnackbarMessage('お気に入りから削除しました');
+    } else {
+      // お気に入りに追加
+      await favoriteCombinationStorage.add(grail.id, relicIds);
+      const newFavorites = await favoriteCombinationStorage.getAll();
+      setFavorites(newFavorites);
+      setSnackbarMessage('お気に入りに追加しました');
+    }
+    setSnackbarOpen(true);
+  };
+
   return (
     <Box>
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -249,9 +285,22 @@ export default function SearchCombination() {
           </Typography>
           {searchResults.map((result, index) => (
             <Paper key={index} sx={{ p: 2, mb: 2 }}>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                盃: {getNightRunnerName(result.grail.nightRunnerId)} - {result.grail.colors.map((c) => c).join('・')}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="subtitle1">
+                  盃: {getNightRunnerName(result.grail.nightRunnerId)} - {result.grail.colors.map((c) => c).join('・')}
+                </Typography>
+                <IconButton
+                  onClick={() => handleToggleFavorite(result.grail, result.relics)}
+                  color="error"
+                  aria-label="お気に入りに追加"
+                >
+                  {isFavorite(result.grail.id, result.relics.map((r) => r.id)) ? (
+                    <FavoriteIcon />
+                  ) : (
+                    <FavoriteBorderIcon />
+                  )}
+                </IconButton>
+              </Box>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
@@ -288,6 +337,17 @@ export default function SearchCombination() {
           </Typography>
         </Paper>
       )}
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

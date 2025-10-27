@@ -28,3 +28,10 @@ export interface Grail {
   nightRunnerId: string; // 所属する夜渡りのID
   colors: [GrailColor, GrailColor, GrailColor]; // 3つの色
 }
+
+export interface FavoriteCombination {
+  id: string;
+  grailId: string; // 盃のID
+  relicIds: [string, string, string]; // 遺物のIDの配列（必ず3つ）
+  createdAt: number; // タイムスタンプ
+}

@@ -1,4 +1,4 @@
-import { Effect, Relic, Category, NightRunner, Grail } from '@/types';
+import { Effect, Relic, Category, NightRunner, Grail, FavoriteCombination } from '@/types';
 import { db } from './firebase';
 import {
   collection,
@@ -7,7 +7,8 @@ import {
   setDoc,
   writeBatch,
   query,
-  orderBy
+  orderBy,
+  deleteDoc
 } from 'firebase/firestore';
 
 // デフォルトカテゴリのID
@@ -20,6 +21,7 @@ const COLLECTIONS = {
   RELICS: 'relics',
   NIGHTRUNNERS: 'nightrunners',
   GRAILS: 'grails',
+  FAVORITES: 'favorites',
 };
 
 export const categoryStorage = {
@@ -178,5 +180,27 @@ export const grailStorage = {
     });
 
     await batch.commit();
+  },
+};
+
+export const favoriteCombinationStorage = {
+  getAll: async (): Promise<FavoriteCombination[]> => {
+    const favoritesRef = collection(db, COLLECTIONS.FAVORITES);
+    const q = query(favoritesRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as FavoriteCombination));
+  },
+  add: async (grailId: string, relicIds: [string, string, string]) => {
+    const id = `${grailId}_${relicIds.join('_')}`;
+    const favoriteRef = doc(db, COLLECTIONS.FAVORITES, id);
+    await setDoc(favoriteRef, {
+      grailId,
+      relicIds,
+      createdAt: Date.now(),
+    });
+  },
+  remove: async (id: string) => {
+    const favoriteRef = doc(db, COLLECTIONS.FAVORITES, id);
+    await deleteDoc(favoriteRef);
   },
 };
