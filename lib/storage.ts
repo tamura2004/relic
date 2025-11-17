@@ -190,14 +190,19 @@ export const favoriteCombinationStorage = {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as FavoriteCombination));
   },
-  add: async (grailId: string, relicIds: [string, string, string]) => {
-    const id = `${grailId}_${relicIds.join('_')}`;
+  add: async (grailId: string, relicIds: [string, string, string], description?: string) => {
+    const id = `${grailId}_${[...relicIds].sort().join('_')}`;
     const favoriteRef = doc(db, COLLECTIONS.FAVORITES, id);
     await setDoc(favoriteRef, {
       grailId,
       relicIds,
+      description: description || '',
       createdAt: Date.now(),
     });
+  },
+  update: async (id: string, description: string) => {
+    const favoriteRef = doc(db, COLLECTIONS.FAVORITES, id);
+    await setDoc(favoriteRef, { description }, { merge: true });
   },
   remove: async (id: string) => {
     const favoriteRef = doc(db, COLLECTIONS.FAVORITES, id);

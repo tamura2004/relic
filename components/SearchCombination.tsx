@@ -28,6 +28,11 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -53,6 +58,9 @@ export default function SearchCombination() {
   const [searchResults, setSearchResults] = useState<GrailRelicMatch[]>([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [descriptionDialogOpen, setDescriptionDialogOpen] = useState(false);
+  const [tempFavorite, setTempFavorite] = useState<{ grail: Grail; relics: Relic[] } | null>(null);
+  const [favoriteDescription, setFavoriteDescription] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -198,14 +206,27 @@ export default function SearchCombination() {
       await favoriteCombinationStorage.remove(favoriteId);
       setFavorites(favorites.filter((f) => f.id !== favoriteId));
       setSnackbarMessage('お気に入りから削除しました');
+      setSnackbarOpen(true);
     } else {
-      // お気に入りに追加
-      await favoriteCombinationStorage.add(grail.id, relicIds);
-      const newFavorites = await favoriteCombinationStorage.getAll();
-      setFavorites(newFavorites);
-      setSnackbarMessage('お気に入りに追加しました');
+      // お気に入りに追加（ダイアログを表示）
+      setTempFavorite({ grail, relics });
+      setFavoriteDescription('');
+      setDescriptionDialogOpen(true);
     }
+  };
+
+  const handleSaveFavorite = async () => {
+    if (!tempFavorite) return;
+
+    const relicIds = tempFavorite.relics.map((r) => r.id) as [string, string, string];
+    await favoriteCombinationStorage.add(tempFavorite.grail.id, relicIds, favoriteDescription);
+    const newFavorites = await favoriteCombinationStorage.getAll();
+    setFavorites(newFavorites);
+    setSnackbarMessage('お気に入りに追加しました');
     setSnackbarOpen(true);
+    setDescriptionDialogOpen(false);
+    setTempFavorite(null);
+    setFavoriteDescription('');
   };
 
   return (
@@ -348,6 +369,34 @@ export default function SearchCombination() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={descriptionDialogOpen}
+        onClose={() => setDescriptionDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>お気に入りに追加</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="説明（任意）"
+            fullWidth
+            value={favoriteDescription}
+            onChange={(e) => setFavoriteDescription(e.target.value)}
+            placeholder="この組み合わせについてのメモを入力できます"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDescriptionDialogOpen(false)}>
+            キャンセル
+          </Button>
+          <Button onClick={handleSaveFavorite} variant="contained">
+            追加
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

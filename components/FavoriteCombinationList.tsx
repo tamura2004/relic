@@ -19,6 +19,11 @@ import {
   DialogContentText,
   DialogActions,
   Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { FavoriteCombination, Grail, Relic, Effect, NightRunner, GrailColor, RelicColor } from '@/types';
@@ -32,6 +37,9 @@ export default function FavoriteCombinationList() {
   const [nightRunners, setNightRunners] = useState<NightRunner[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedFavoriteId, setSelectedFavoriteId] = useState<string | null>(null);
+  const [selectedNightRunnerId, setSelectedNightRunnerId] = useState<string>('all');
+  const [editingDescriptions, setEditingDescriptions] = useState<Record<string, string>>({});
+  const [editingFavoriteId, setEditingFavoriteId] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -100,13 +108,68 @@ export default function FavoriteCombinationList() {
     setSelectedFavoriteId(null);
   };
 
+  const handleDescriptionClick = (favorite: FavoriteCombination) => {
+    setEditingFavoriteId(favorite.id);
+    setEditingDescriptions((prev) => ({
+      ...prev,
+      [favorite.id]: favorite.description || '',
+    }));
+  };
+
+  const handleDescriptionChange = (favoriteId: string, value: string) => {
+    setEditingDescriptions((prev) => ({
+      ...prev,
+      [favoriteId]: value,
+    }));
+  };
+
+  const handleDescriptionBlur = async (favoriteId: string) => {
+    const newDescription = editingDescriptions[favoriteId];
+    if (newDescription !== undefined) {
+      await favoriteCombinationStorage.update(favoriteId, newDescription);
+      await loadData();
+    }
+    setEditingFavoriteId(null);
+    setEditingDescriptions((prev) => {
+      const newState = { ...prev };
+      delete newState[favoriteId];
+      return newState;
+    });
+  };
+
+  // 夜渡りでフィルタリングされたお気に入りを取得
+  const filteredFavorites = favorites.filter((favorite) => {
+    if (selectedNightRunnerId === 'all') return true;
+    const grail = getGrail(favorite.grailId);
+    if (!grail) return false;
+    return grail.nightRunnerId === selectedNightRunnerId;
+  });
+
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        お気に入り: {favorites.length}件
+        お気に入り: {filteredFavorites.length}件
       </Typography>
 
-      {favorites.length === 0 && (
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>夜渡り</InputLabel>
+          <Select
+            value={selectedNightRunnerId}
+            label="夜渡り"
+            onChange={(e) => setSelectedNightRunnerId(e.target.value)}
+          >
+            <MenuItem value="all">すべて</MenuItem>
+            {nightRunners.map((nr) => (
+              <MenuItem key={nr.id} value={nr.id}>
+                {nr.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Paper>
+
+      {filteredFavorites.length === 0 && (
         <Paper sx={{ p: 3 }}>
           <Typography color="text.secondary">
             お気に入りに登録された組み合わせはありません。
@@ -114,7 +177,7 @@ export default function FavoriteCombinationList() {
         </Paper>
       )}
 
-      {favorites.map((favorite) => {
+      {filteredFavorites.map((favorite) => {
         const grail = getGrail(favorite.grailId);
         if (!grail) return null;
 
@@ -127,9 +190,38 @@ export default function FavoriteCombinationList() {
         return (
           <Paper key={favorite.id} sx={{ p: 2, mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="subtitle1">
-                盃: {getNightRunnerName(grail.nightRunnerId)} - {grail.colors.map((c) => c).join('・')}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                <Typography variant="subtitle1" sx={{ whiteSpace: 'nowrap' }}>
+                  盃: {getNightRunnerName(grail.nightRunnerId)} - {grail.colors.map((c) => c).join('・')}
+                </Typography>
+                {editingFavoriteId === favorite.id ? (
+                  <TextField
+                    autoFocus
+                    fullWidth
+                    size="small"
+                    placeholder="説明を入力..."
+                    value={editingDescriptions[favorite.id] ?? ''}
+                    onChange={(e) => handleDescriptionChange(favorite.id, e.target.value)}
+                    onBlur={() => handleDescriptionBlur(favorite.id)}
+                  />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: favorite.description ? 'text.primary' : 'text.disabled',
+                      cursor: 'pointer',
+                      flex: 1,
+                      '&:hover': { backgroundColor: 'action.hover' },
+                      px: 1,
+                      py: 0.5,
+                      borderRadius: 1,
+                    }}
+                    onClick={() => handleDescriptionClick(favorite)}
+                  >
+                    {favorite.description || '説明を入力...'}
+                  </Typography>
+                )}
+              </Box>
               <IconButton
                 onClick={() => handleDeleteClick(favorite.id)}
                 color="error"

@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Paper,
   IconButton,
   Chip,
@@ -28,7 +27,7 @@ export default function RelicList() {
   const [relics, setRelics] = useState<Relic[]>([]);
   const [effects, setEffects] = useState<Effect[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [effectFilter, setEffectFilter] = useState('');
   const [colorFilter, setColorFilter] = useState<RelicColor | ''>('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [editingRelic, setEditingRelic] = useState<Relic | null>(null);
@@ -85,10 +84,8 @@ export default function RelicList() {
   const filteredRelics = relics.filter((relic) => {
     const matchesColor = !colorFilter || relic.color === colorFilter;
     const matchesEffect =
-      !searchTerm ||
-      relic.effects.some((effectId) =>
-        getEffectDescription(effectId).includes(searchTerm)
-      );
+      !effectFilter ||
+      relic.effects.some((effectId) => effectId === effectFilter);
     const matchesCategory =
       !categoryFilter ||
       relic.effects.some((effectId) => {
@@ -108,26 +105,44 @@ export default function RelicList() {
     return colorMap[color];
   };
 
+  const filteredEffectsByCategory = categoryFilter
+    ? effects.filter((e) => e.categoryId === categoryFilter)
+    : effects;
+
+  const handleCategoryFilterChange = (value: string) => {
+    setCategoryFilter(value);
+    setEffectFilter(''); // カテゴリ変更時に効果フィルタをリセット
+  };
+
   return (
     <Box>
       <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <TextField
-          label="効果で検索"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-        />
-        <FormControl sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: 200 }}>
           <InputLabel>カテゴリで絞込</InputLabel>
           <Select
             value={categoryFilter}
             label="カテゴリで絞込"
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={(e) => handleCategoryFilterChange(e.target.value)}
           >
             <MenuItem value="">すべて</MenuItem>
             {categories.map((category) => (
               <MenuItem key={category.id} value={category.id}>
                 {category.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl sx={{ minWidth: 300 }} disabled={!categoryFilter}>
+          <InputLabel>効果で絞込</InputLabel>
+          <Select
+            value={effectFilter}
+            label="効果で絞込"
+            onChange={(e) => setEffectFilter(e.target.value)}
+          >
+            <MenuItem value="">すべて</MenuItem>
+            {filteredEffectsByCategory.map((effect) => (
+              <MenuItem key={effect.id} value={effect.id}>
+                {effect.description}
               </MenuItem>
             ))}
           </Select>

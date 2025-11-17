@@ -33,5 +33,6 @@ export interface FavoriteCombination {
   id: string;
   grailId: string; // 盃のID
   relicIds: [string, string, string]; // 遺物のIDの配列（必ず3つ）
+  description?: string; // 説明（オプション）
   createdAt: number; // タイムスタンプ
 }
