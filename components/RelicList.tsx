@@ -134,7 +134,7 @@ export default function RelicList() {
   };
 
   const filteredEffectsByCategory = categoryFilter
-    ? effects.filter((e) => e.categoryId === categoryFilter)
+    ? effects.filter((e) => e.categoryId === categoryFilter).sort((a, b) => a.description.localeCompare(b.description))
     : effects;
 
   const handleCategoryFilterChange = (value: string) => {
