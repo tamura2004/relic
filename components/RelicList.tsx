@@ -47,6 +47,34 @@ export default function RelicList() {
     loadData();
   }, []);
 
+  const getCategoryScore = (categoryId: string): number => {
+    const category = categories.find((c) => c.id === categoryId);
+    if (category == null) return 0;
+    if (category.name === "その他") return 0;
+    if (category.name === "能力値") return 1;
+    return 2;
+  }
+
+  const getEffectScore = (effect?: Effect): number => {
+    if (!effect) return 0;
+    if (effect.description.includes("拳を")) return 6;
+    if (effect.description.includes("拳")) return 3;
+    if (effect.description.includes("無頼漢")) return 3;
+    if (effect.description.includes("炎")) return -2;
+    if (effect.description.includes("聖")) return -2;
+    if (effect.description.includes("雷")) return -2;
+    if (effect.description.includes("魔力")) return -2;
+    return 0;
+  }
+
+  const getRelicScore = (relic: Relic): number => {
+    return relic.effects.reduce((score, effectId) => {
+      const effect = effects.find((e) => e.id === effectId);
+      if (!effect) return score;
+      return score + getEffectScore(effect) + getCategoryScore(effect.categoryId);
+    }, 0);
+  }
+
   const handleSave = async (relic: Relic) => {
     let updatedRelics: Relic[];
     if (editingRelic) {
@@ -93,7 +121,7 @@ export default function RelicList() {
         return effect?.categoryId === categoryFilter;
       });
     return matchesColor && matchesEffect && matchesCategory;
-  });
+  }).sort((a, b) => getRelicScore(b) - getRelicScore(a)); // スコアの高い順にソート
 
   const getColorChipColor = (color: RelicColor) => {
     const colorMap: Record<RelicColor, 'error' | 'primary' | 'warning' | 'success'> = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import {useState, useEffect, useMemo, useCallback} from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -64,19 +64,26 @@ export default function RelicForm({ open, relic, effects, categories, onSave, on
     }
   }, [relic, effects]);
 
+  const filterAndSortEffects = useCallback((categoryId?: string) => {
+    if (!categoryId) return [];
+    return effects
+      .filter(e => e.categoryId === categoryId)
+      .sort((a, b) => a.description.localeCompare(b.description));
+  }, [effects]);
+
   const filteredEffects1 = useMemo(() =>
-    category1 ? effects.filter(e => e.categoryId === category1) : [],
-    [effects, category1]
+    filterAndSortEffects(category1),
+    [filterAndSortEffects, category1]
   );
 
   const filteredEffects2 = useMemo(() =>
-    category2 ? effects.filter(e => e.categoryId === category2) : [],
-    [effects, category2]
+    filterAndSortEffects(category2),
+    [filterAndSortEffects, category2]
   );
 
   const filteredEffects3 = useMemo(() =>
-    category3 ? effects.filter(e => e.categoryId === category3) : [],
-    [effects, category3]
+    filterAndSortEffects(category3),
+    [filterAndSortEffects, category3]
   );
 
   const handleCategoryChange1 = (newCategory: string) => {
